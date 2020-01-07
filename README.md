@@ -8,8 +8,24 @@ Results after training on 40M frames:
 ![pong-v4.gif](pong-v4/pong-v4.gif)
 ![spaceinvaders-v4.gif](spaceinvaders-v4/spaceinvaders-v4.gif)
 
+Installation
+--------
+This repository features a Docker container to ease the installation process. To use, first install Docker according to the [installation steps](https://docs.docker.com/install/). Next, build the container with the following (replace the name/tag as appropriate).
+
+```sh
+docker build -t baby-a3c:1.0.0 .
+```
+
 Usage
 --------
+
+To launch the build Docker container, run
+
+```sh
+docker run --rm -it baby-a3c:1.0.0
+```
+
+Once inside the container, change to the `baby-a3c` directory and run the code below to start.
 
 If you're working on OpenAI's [Breakout-v4](https://gym.openai.com/envs/Breakout-v4/) environment:
  * To train: `python baby-a3c.py --env Breakout-v4`
@@ -49,16 +65,6 @@ self.critic_linear, self.actor_linear = nn.Linear(memsize, 1), nn.Linear(memsize
 ```
 
 \*we use a GRU cell because it has fewer params, uses one memory vector instead of two, and attains the same performance as an LSTM cell.
-
-Environments that work
---------
-_(Use `pip freeze` to check your environment settings)_
- * Mac OSX (test mode only) or Linux (train and test)
- * Python 3.6
- * NumPy 1.13.1+
- * Gym 0.9.4+
- * SciPy 0.19.1 (just on two lines -> workarounds possible)
- * [PyTorch 0.4.0](http://pytorch.org/)
 
 Known issues
 --------
