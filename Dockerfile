@@ -11,8 +11,6 @@ RUN pip3 install gym \
         numpy==1.13.1 \
         pillow \
         scipy==0.19.1 \
-        torch && \
-    # This needs to be done separately from the last step for some reason.
-    pip3 install gym[atari]
+        torch
 
 COPY . baby-a3c

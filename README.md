@@ -1,12 +1,6 @@
-Baby A3C: solving Atari environments in 180 lines
+Baby A3C: solving Mario Kart environments in 180 lines
 =======
 Sam Greydanus | October 2017 | MIT License
-
-Results after training on 40M frames:
-
-![breakout-v4.gif](breakout-v4/breakout-v4.gif)
-![pong-v4.gif](pong-v4/pong-v4.gif)
-![spaceinvaders-v4.gif](spaceinvaders-v4/spaceinvaders-v4.gif)
 
 Installation
 --------
@@ -27,10 +21,9 @@ docker run --rm -it baby-a3c:1.0.0
 
 Once inside the container, change to the `baby-a3c` directory and run the code below to start.
 
-If you're working on OpenAI's [Breakout-v4](https://gym.openai.com/envs/Breakout-v4/) environment:
- * To train: `python baby-a3c.py --env Breakout-v4`
- * To test: `python baby-a3c.py --env Breakout-v4 --test True`
- * To render: `python baby-a3c.py --env Breakout-v4 --render True`
+ * To train: `python baby-a3c.py --env Mario-Kart-Discrete-Luigi-Raceway-v0`
+ * To test: `python baby-a3c.py --env Mario-Kart-Discrete-Luigi-Raceway-v0 --test True`
+ * To render: `python baby-a3c.py --env Mario-Kart-Discrete-Luigi-Raceway-v0 --render True`
 
 About
 --------
@@ -44,11 +37,6 @@ Frustrated by the number of deep RL implementations that are clunky and opaque? 
  * If **something goes wrong**, there's not a mountain of code to debug
  * If you want to **try something new**, this is a simple and strong baseline
  * Here's a [quick intro to A3C](https://goo.gl/Ub3vCY) that I wrote
-
-|			                         | Breakout-v4  | Pong-v4       | SpaceInvaders-v4  |
-| -------------                      |:------------:| :------------:| :------------:    |
-| *Mean episode rewards @ 40M frames | 140 ± 20     | 18.2 ± 1    |   470 ± 30        |
-| *Mean episode rewards @ 80M frames | 190 ± 20     | 17.9 ± 1    |   550 ± 30        |
 
 \*same (default) hyperparameters across all environments
 
