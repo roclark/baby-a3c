@@ -4,7 +4,14 @@ Sam Greydanus | October 2017 | MIT License
 
 Installation
 --------
-This repository features a Docker container to ease the installation process. To use, first install Docker according to the [installation steps](https://docs.docker.com/install/). Next, build the container with the following (replace the name/tag as appropriate).
+This repository features a Docker container to ease the installation process. To use, first install Docker according to the [installation steps](https://docs.docker.com/install/). Next, build the gym-mupen64plus container by following the steps outlined [here](https://github.com/bzier/gym-mupen64plus/). Then, edit the first line of the `Dockerfile` in this directory with the image name and tag from the previous step.
+
+```Dockerfile
+# Example
+FROM roclark/gym-mupen64plus:0.1.0
+```
+
+Lastly, build the container with the following (replace the name/tag as appropriate).
 
 ```sh
 docker build -t baby-a3c:1.0.0 .
@@ -13,7 +20,7 @@ docker build -t baby-a3c:1.0.0 .
 Usage
 --------
 
-To launch the build Docker container, run
+To launch the built Docker container, run
 
 ```sh
 docker run --rm -it baby-a3c:1.0.0

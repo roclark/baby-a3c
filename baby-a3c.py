@@ -1,7 +1,7 @@
 # Baby Advantage Actor-Critic | Sam Greydanus | October 2017 | MIT License
 
 from __future__ import print_function
-import torch, os, gym, time, glob, argparse, sys
+import torch, os, gym, gym_mupen64plus, time, glob, argparse, sys
 import numpy as np
 from scipy.signal import lfilter
 from scipy.misc import imresize # preserves single-pixel info _unlike_ img = img[::2,::2]
@@ -13,7 +13,7 @@ os.environ['OMP_NUM_THREADS'] = '1'
 def get_args():
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('--env', default='Mario-Kart-Discrete-Luigi-Raceway-v0', type=str, help='gym environment')
-    parser.add_argument('--processes', default=20, type=int, help='number of processes to train with')
+    parser.add_argument('--processes', default=1, type=int, help='number of processes to train with')
     parser.add_argument('--render', default=False, type=bool, help='renders the game environment')
     parser.add_argument('--test', default=False, type=bool, help='sets lr=0, chooses most likely actions')
     parser.add_argument('--rnn_steps', default=20, type=int, help='steps to train LSTM over')
@@ -26,7 +26,7 @@ def get_args():
     return parser.parse_args()
 
 discount = lambda x, gamma: lfilter([1],[1,-gamma],x[::-1])[::-1] # discounted rewards one liner
-prepro = lambda img: imresize(img[35:195].mean(2), (80,80)).astype(np.float32).reshape(1,80,80)/255.
+prepro = lambda img: imresize(img.mean(2), (160,120)).astype(np.float32).reshape(1,120,160)/255.
 
 def printlog(args, s, end='\n', mode='a'):
     print(s, end=end) ; f=open(args.save_dir+'log.txt',mode) ; f.write(s+'\n') ; f.close()
@@ -38,7 +38,7 @@ class NNPolicy(nn.Module): # an actor-critic neural network
         self.conv2 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
         self.conv3 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
         self.conv4 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
-        self.gru = nn.GRUCell(32 * 5 * 5, memsize)
+        self.gru = nn.GRUCell(2560, memsize)
         self.critic_linear, self.actor_linear = nn.Linear(memsize, 1), nn.Linear(memsize, num_actions)
 
     def forward(self, inputs, train=True, hard=False):
@@ -47,7 +47,7 @@ class NNPolicy(nn.Module): # an actor-critic neural network
         x = F.elu(self.conv2(x))
         x = F.elu(self.conv3(x))
         x = F.elu(self.conv4(x))
-        hx = self.gru(x.view(-1, 32 * 5 * 5), (hx))
+        hx = self.gru(x.view(-1, 2560), (hx))
         return self.critic_linear(hx), self.actor_linear(hx), hx
 
     def try_load(self, save_dir):
@@ -95,8 +95,7 @@ def cost_func(args, values, logps, actions, rewards):
     entropy_loss = (-logps * torch.exp(logps)).sum() # entropy definition, for entropy regularization
     return policy_loss + 0.5 * value_loss - 0.01 * entropy_loss
 
-def train(shared_model, shared_optimizer, rank, args, info):
-    env = gym.make(args.env) # make a local (unshared) environment
+def train(env, shared_model, shared_optimizer, rank, args, info):
     env.seed(args.seed + rank) ; torch.manual_seed(args.seed + rank) # seed everything
     model = NNPolicy(channels=1, memsize=args.hidden, num_actions=args.num_actions) # a local/unshared model
     state = torch.tensor(prepro(env.reset())) # get first state
@@ -112,7 +111,7 @@ def train(shared_model, shared_optimizer, rank, args, info):
 
         for step in range(args.rnn_steps):
             episode_length += 1
-            value, logit, hx = model((state.view(1,1,80,80), hx))
+            value, logit, hx = model((state.view(1,1,120,160), hx))
             logp = F.log_softmax(logit, dim=-1)
 
             action = torch.exp(logp).multinomial(num_samples=1).data[0]#logp.max(1)[1].data if args.test else
@@ -169,7 +168,8 @@ if __name__ == "__main__":
     args.save_dir = '{}/'.format(args.env.lower()) # keep the directory structure simple
     if args.render:  args.processes = 1 ; args.test = True # render mode -> test mode w one process
     if args.test:  args.lr = 0 # don't train in render mode
-    args.num_actions = gym.make(args.env).action_space.n # get the action space of this game
+    env = gym.make(args.env) # create the gym environment for the game
+    args.num_actions = env.action_space.n # get the action space of this game
     os.makedirs(args.save_dir) if not os.path.exists(args.save_dir) else None # make dir to save models etc.
 
     torch.manual_seed(args.seed)
@@ -181,7 +181,4 @@ if __name__ == "__main__":
     if int(info['frames'].item()) == 0: printlog(args,'', end='', mode='w') # clear log file
     
     processes = []
-    for rank in range(args.processes):
-        p = mp.Process(target=train, args=(shared_model, shared_optimizer, rank, args, info))
-        p.start() ; processes.append(p)
-    for p in processes: p.join()
+    train(env, shared_model, shared_optimizer, 0, args, info)
